@@ -94,6 +94,8 @@ jobs:
           DATABASE_USERNAME: postgres
           DATABASE_PASSWORD: postgres
           RAILS_ENV: development
+          WEB_CONCURRENCY: 2
+          RAILS_MAX_THREADS: 5
         run: bin/rails server &
 
       - name: Wait for both servers to be ready

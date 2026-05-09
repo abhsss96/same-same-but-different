@@ -27,6 +27,21 @@
 threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
+# Number of worker processes. Defaults to 1 (single-process) for local dev
+# so code reloading works. Set WEB_CONCURRENCY=2+ in production/CI.
+worker_count = ENV.fetch("WEB_CONCURRENCY", 1).to_i
+workers worker_count if worker_count > 1
+
+# With multiple workers, preload the app into the master process so workers
+# fork from a warm copy (copy-on-write). Reconnect DB after each fork.
+if worker_count > 1
+  preload_app!
+
+  on_worker_boot do
+    ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
+  end
+end
+
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000)
 
