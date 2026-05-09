@@ -128,12 +128,16 @@ jobs:
         run: k6 run bench/k6_ws.js --env TARGET=rails
 
       - name: WS flood — Phoenix (500 conns)
-        run: node bench/ws_flood.js --target phoenix --conns 500
+        run: node bench/ws_flood.js --target phoenix --conns 500 | tee bench/results/flood_phoenix.txt
 
       - name: WS flood — Rails (500 conns)
-        run: node bench/ws_flood.js --target rails --conns 500
+        run: node bench/ws_flood.js --target rails --conns 500 | tee bench/results/flood_rails.txt
 
       # ── Results ────────────────────────────────────────────────────────────
+
+      - name: Write job summary
+        if: always()
+        run: node bench/summarize.js
 
       - name: Upload benchmark results
         if: always()

@@ -1,0 +1,27 @@
+# ── Phoenix / Elixir ──────────────────────────────────────────────────────────
+phoenix_app/_build/
+phoenix_app/deps/
+phoenix_app/.elixir_ls/
+phoenix_app/priv/static/assets/
+phoenix_app/priv/cert/
+phoenix_app/.env
+
+# ── Rails ─────────────────────────────────────────────────────────────────────
+rails_app/.bundle/
+rails_app/vendor/bundle/
+rails_app/log/*.log
+rails_app/tmp/
+rails_app/storage/
+rails_app/public/assets/
+rails_app/app/assets/builds/
+rails_app/.env
+rails_app/config/master.key
+rails_app/config/credentials/*.key
+
+# ── Bench ─────────────────────────────────────────────────────────────────────
+bench/node_modules/
+bench/results/
+
+# ── General ───────────────────────────────────────────────────────────────────
+.DS_Store
+*.sw[po]
