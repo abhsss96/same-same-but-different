@@ -47,11 +47,7 @@ jobs:
           node-version: "22.11.0"
 
       - name: Install k6
-        run: |
-          curl -fsSL https://github.com/grafana/k6/releases/latest/download/k6-linux-amd64.tar.gz \
-            | tar -xz --strip-components=1 -C /tmp
-          sudo mv /tmp/k6 /usr/local/bin/k6
-          k6 version
+        uses: grafana/setup-k6-action@v1
 
       - name: Install bench deps
         run: cd bench && npm install ws
