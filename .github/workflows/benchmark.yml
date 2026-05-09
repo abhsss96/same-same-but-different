@@ -109,16 +109,16 @@ jobs:
         run: mkdir -p bench/results
 
       - name: k6 HTTP — Phoenix
-        run: k6 run --no-throw bench/k6_http.js --env TARGET=phoenix
+        run: k6 run bench/k6_http.js --env TARGET=phoenix || true
 
       - name: k6 HTTP — Rails
-        run: k6 run --no-throw bench/k6_http.js --env TARGET=rails
+        run: k6 run bench/k6_http.js --env TARGET=rails || true
 
       - name: k6 WebSocket — Phoenix
-        run: k6 run --no-throw bench/k6_ws.js --env TARGET=phoenix
+        run: k6 run bench/k6_ws.js --env TARGET=phoenix || true
 
       - name: k6 WebSocket — Rails
-        run: k6 run --no-throw bench/k6_ws.js --env TARGET=rails
+        run: k6 run bench/k6_ws.js --env TARGET=rails || true
 
       - name: WS flood — Phoenix (500 conns)
         run: node bench/ws_flood.js --target phoenix --conns 500 | tee bench/results/flood_phoenix.txt
