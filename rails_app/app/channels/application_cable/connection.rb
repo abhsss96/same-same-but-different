@@ -13,13 +13,20 @@ module ApplicationCable
     private
 
     def find_user_from_cookies
-      user_id    = cookies.signed[:user_id]
-      user_name  = cookies.signed[:user_name]
-      user_color = cookies.signed[:user_color]
+      user_id = cookies.signed[:user_id]
 
-      return reject_unauthorized_connection unless user_id
+      # Allow anonymous WebSocket connections (e.g. benchmarks, health checks).
+      # A real app would reject here; for this comparison project we just assign
+      # a temporary identity so the connection is established.
+      unless user_id
+        return { id: SecureRandom.uuid, name: "Anonymous", color: "#999999" }
+      end
 
-      { id: user_id, name: user_name, color: user_color }
+      {
+        id:    user_id,
+        name:  cookies.signed[:user_name],
+        color: cookies.signed[:user_color]
+      }
     end
   end
 end
