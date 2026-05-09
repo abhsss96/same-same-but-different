@@ -68,12 +68,12 @@ export default function () {
   let createRes
 
   if (TARGET === "phoenix") {
-    // Phoenix: LiveView sends events over WebSocket; we use the HTTP fallback
-    // endpoint for benchmarking purposes. In production Phoenix uses WS.
+    // Phoenix: LiveView handles CRUD over WebSocket in normal use.
+    // This HTTP endpoint exists for benchmarking — uses the :api pipeline (no CSRF).
     createRes = http.post(
-      `${BASE}/room/${ROOM_ID}`,
-      JSON.stringify({ _method: "POST", content: `k6 todo ${Date.now()}` }),
-      { headers: csrfHeaders(token), jar }
+      `${BASE}/room/${ROOM_ID}/todos`,
+      JSON.stringify({ content: `k6 todo ${Date.now()}` }),
+      { headers: { "Content-Type": "application/json" }, jar }
     )
   } else {
     createRes = http.post(

@@ -25,10 +25,10 @@ defmodule TodoBoardWeb.Router do
     live "/stress", StressLive, :show
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", TodoBoardWeb do
-  #   pipe_through :api
-  # end
+  scope "/", TodoBoardWeb do
+    pipe_through :api
+    post "/room/:room_id/todos", TodosController, :create
+  end
 
   # Enable LiveDashboard in development
   if Application.compile_env(:todo_board, :dev_routes) do
