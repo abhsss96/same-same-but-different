@@ -1,0 +1,189 @@
+<div class="min-h-screen bg-gray-50">
+  <%# ── Header ──────────────────────────────────────────────────────────── %>
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-sm font-semibold text-gray-900 truncate">
+          <span class="text-gray-400 font-normal">Room /</span> <%= @room_id %>
+        </h1>
+        <p class="text-xs text-gray-400">
+          <%= length(@presences) %> connected
+          &nbsp;·&nbsp;
+          <span class="text-blue-500 font-medium">Phoenix LiveView</span>
+        </p>
+      </div>
+
+      <%# Presence avatars — rerenders on every presence_diff -%>
+      <div class="flex -space-x-2 flex-shrink-0" id="presence-list" phx-update="replace">
+        <%= for p <- @presences do %>
+          <div
+            id={"avatar-#{p.id}"}
+            class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-white select-none"
+            style={"background-color: #{p.color}"}
+            title={"#{p.name}#{if p.typing, do: " (typing…)", else: ""}"}
+          >
+            <%= initials(p.name) %>
+            <%= if p.typing do %>
+              <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full ring-1 ring-white"></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </header>
+
+  <%# ── Main ──────────────────────────────────────────────────────────────── %>
+  <main class="max-w-2xl mx-auto px-4 py-6">
+
+    <%# Flash messages %>
+    <.flash_group flash={@flash} />
+
+    <%# New-todo form -%>
+    <%# phx-submit uses WebSocket, no page reload. Rails equivalent: form_with
+        submits over HTTP then a Turbo Stream replaces the list. -%>
+    <form phx-submit="add_todo" class="mb-4">
+      <div class="flex gap-2">
+        <input
+          id="new-todo-input"
+          name="content"
+          type="text"
+          value={@new_todo}
+          placeholder="What needs doing?"
+          autocomplete="off"
+          phx-keyup="typing"
+          phx-debounce="80"
+          class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm placeholder-gray-400
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <button
+          type="submit"
+          class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-5 py-2.5
+                 rounded-lg text-sm font-medium transition-colors"
+        >
+          Add
+        </button>
+      </div>
+
+      <%# Typing indicator — fed by Presence metadata, not a separate event -%>
+      <p class="mt-1.5 text-xs text-gray-400 h-4 transition-opacity" id="typing-indicator">
+        <%= typing_text(typing_users(@presences, @user.id)) %>
+      </p>
+    </form>
+
+    <%# Stats bar -%>
+    <p class="text-xs text-gray-400 mb-3">
+      <%= length(@todos) %> task<%= if length(@todos) != 1, do: "s" %> ·
+      <%= Enum.count(@todos, & &1.completed) %> done
+    </p>
+
+    <%# Todo list -%>
+    <ul id="todo-list" class="space-y-2">
+      <%= for todo <- @todos do %>
+        <li
+          id={"todo-#{todo.id}"}
+          class={"group bg-white rounded-lg border border-gray-200 px-4 py-3
+                  flex items-center gap-3 transition-opacity
+                  #{if todo.completed, do: "opacity-60"}"}
+        >
+          <%# Checkbox toggle -%>
+          <button
+            phx-click="toggle_todo"
+            phx-value-id={todo.id}
+            class={"w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center
+                    transition-colors
+                    #{if todo.completed,
+                        do: "bg-blue-600 border-blue-600",
+                        else: "border-gray-300 hover:border-blue-400"}"}
+          >
+            <%= if todo.completed do %>
+              <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            <% end %>
+          </button>
+
+          <%# Content: inline editor when editing_id matches, text otherwise -%>
+          <%= if @editing_id == todo.id do %>
+            <form phx-submit="save_edit" class="flex-1 flex gap-2">
+              <input type="hidden" name="todo_id" value={todo.id} />
+              <input
+                name="content"
+                type="text"
+                value={todo.content}
+                phx-mounted={JS.focus()}
+                phx-keydown="cancel_edit"
+                phx-key="Escape"
+                class="flex-1 border border-blue-400 rounded px-2 py-0.5 text-sm
+                       focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <button type="submit"
+                      class="text-xs text-blue-600 font-medium px-2 hover:text-blue-800">
+                Save
+              </button>
+              <button type="button" phx-click="cancel_edit"
+                      class="text-xs text-gray-400 px-2 hover:text-gray-600">
+                ✕
+              </button>
+            </form>
+          <% else %>
+            <span class={"flex-1 text-sm text-gray-800 select-none
+                          #{if todo.completed, do: "line-through text-gray-400"}"}
+            >
+              <%= todo.content %>
+            </span>
+
+            <div class="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+              <button
+                phx-click="start_edit"
+                phx-value-id={todo.id}
+                title="Edit"
+                class="text-gray-300 hover:text-gray-600 p-1 rounded transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652
+                           L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685
+                           a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                </svg>
+              </button>
+              <button
+                phx-click="delete_todo"
+                phx-value-id={todo.id}
+                title="Delete"
+                class="text-gray-300 hover:text-red-500 p-1 rounded transition-colors"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21
+                           c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673
+                           a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0
+                           01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0
+                           00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0
+                           0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91
+                           -2.164-2.09-2.201a51.964 51.964 0 00-3.32
+                           0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667
+                           48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+    <%= if @todos == [] do %>
+      <div class="text-center py-16 text-gray-400">
+        <div class="text-5xl mb-3 select-none">📋</div>
+        <p class="text-sm">No todos yet — add the first one above.</p>
+      </div>
+    <% end %>
+
+    <div class="mt-10 pt-6 border-t border-gray-100 flex justify-between text-xs text-gray-300">
+      <span>You are <strong class="font-medium" style={"color: #{@user.color}"}><%= @user.name %></strong></span>
+      <a href="/stress" class="hover:text-gray-500 transition-colors">⚡ stress test</a>
+    </div>
+  </main>
+</div>

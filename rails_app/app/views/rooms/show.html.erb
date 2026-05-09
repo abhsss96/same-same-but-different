@@ -1,0 +1,103 @@
+<%# HTML structure is intentionally identical to phoenix_app/lib/todo_board_web/live/room_live.html.heex.
+    The only differences are template syntax and the data-* attributes for Stimulus/Turbo. -%>
+
+<%# Turbo Streams subscription for todo broadcasts (Turbo::StreamsChannel).
+    DIVERGENCE: Phoenix LiveView is one WebSocket. Rails Hotwire opens TWO
+    Action Cable subscriptions: this one (Turbo::StreamsChannel for HTML diffs)
+    and the RoomChannel subscription opened by room_controller.js (for presence
+    + typing JSON events). -%>
+<%= turbo_stream_from "room_todos:#{@room_id}" %>
+
+<div class="min-h-screen bg-gray-50"
+     data-controller="room"
+     data-room-room-id-value="<%= @room_id %>"
+     data-room-user-id-value="<%= current_user[:id] %>"
+     data-room-user-name-value="<%= current_user[:name] %>"
+     data-room-user-color-value="<%= current_user[:color] %>">
+
+  <%# ── Header ─────────────────────────────────────────────────────────── -%>
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-sm font-semibold text-gray-900 truncate">
+          <span class="text-gray-400 font-normal">Room /</span> <%= @room_id %>
+        </h1>
+        <p class="text-xs text-gray-400">
+          <span data-room-target="connectedCount">0</span> connected
+          &nbsp;·&nbsp;
+          <span class="text-orange-500 font-medium">Rails Hotwire</span>
+        </p>
+      </div>
+
+      <%# Presence avatars — managed by room Stimulus controller -%>
+      <div class="flex -space-x-2 flex-shrink-0"
+           id="presence-list"
+           data-room-target="presenceList">
+      </div>
+    </div>
+  </header>
+
+  <%# ── Main ──────────────────────────────────────────────────────────────── -%>
+  <main class="max-w-2xl mx-auto px-4 py-6">
+
+    <%# New-todo form — submits over HTTP (POST), server responds with Turbo Stream.
+        DIVERGENCE: Phoenix sends this over WebSocket (phx-submit). Rails uses a
+        standard HTTP form; Turbo intercepts and replaces the response via Turbo Stream.
+        The net UX is similar but the mechanism is different. -%>
+    <%= form_with url: room_todos_path(@room_id),
+                  data: { controller: "todo-form",
+                          action: "submit->todo-form#submit" },
+                  html: { autocomplete: "off" } do |f| %>
+      <div class="flex gap-2">
+        <%= f.text_field :content,
+              id: "new-todo-input",
+              placeholder: "What needs doing?",
+              autocomplete: "off",
+              data: { action: "input->room#typing",
+                      "todo-form-target": "input" },
+              class: "flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm
+                      placeholder-gray-400 focus:outline-none focus:ring-2
+                      focus:ring-blue-500 focus:border-transparent" %>
+        <%= f.submit "Add",
+              class: "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white
+                      px-5 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      cursor-pointer" %>
+      </div>
+
+      <%# Typing indicator — updated by room Stimulus controller -%>
+      <p class="mt-1.5 text-xs text-gray-400 h-4 transition-opacity"
+         id="typing-indicator"
+         data-room-target="typingIndicator">
+      </p>
+    <% end %>
+
+    <%# Stats bar -%>
+    <p class="text-xs text-gray-400 mb-3" data-room-target="statsBar">
+      <%= @todos.size %> task<%= "s" if @todos.size != 1 %> ·
+      <%= @todos.count(&:completed?) %> done
+    </p>
+
+    <%# Todo list — Turbo updates target this id -%>
+    <ul id="todo-list" class="space-y-2">
+      <%= render @todos, current_user: current_user %>
+    </ul>
+
+    <% if @todos.empty? %>
+      <div class="text-center py-16 text-gray-400" id="empty-state">
+        <div class="text-5xl mb-3 select-none">📋</div>
+        <p class="text-sm">No todos yet — add the first one above.</p>
+      </div>
+    <% end %>
+
+    <div class="mt-10 pt-6 border-t border-gray-100 flex justify-between text-xs text-gray-300">
+      <span>You are
+        <strong class="font-medium"
+                style="color: <%= current_user[:color] %>">
+          <%= current_user[:name] %>
+        </strong>
+      </span>
+      <%= link_to "⚡ stress test", stress_path,
+            class: "hover:text-gray-500 transition-colors" %>
+    </div>
+  </main>
+</div>

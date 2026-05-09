@@ -1,0 +1,144 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Toolchain ──────────────────────────────────────────────────────────
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.17.2"
+          otp-version: "27.0.1"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.4"
+          bundler-cache: true
+          working-directory: rails_app
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.11.0"
+
+      - name: Install k6
+        run: |
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Install bench deps
+        run: cd bench && npm install ws
+
+      # ── App setup ──────────────────────────────────────────────────────────
+
+      - name: Set up Phoenix DB
+        working-directory: phoenix_app
+        env:
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          MIX_ENV: dev
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix ecto.create
+          mix ecto.migrate
+
+      - name: Set up Rails DB
+        working-directory: rails_app
+        env:
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          RAILS_ENV: development
+        run: bin/rails db:create db:migrate
+
+      # ── Start servers ──────────────────────────────────────────────────────
+
+      - name: Start Phoenix server
+        working-directory: phoenix_app
+        env:
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          MIX_ENV: dev
+        run: mix phx.server &
+
+      - name: Start Rails server
+        working-directory: rails_app
+        env:
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          RAILS_ENV: development
+        run: bin/rails server &
+
+      - name: Wait for both servers to be ready
+        run: |
+          for url in http://localhost:4000 http://localhost:3000; do
+            echo "Waiting for $url..."
+            for i in $(seq 1 30); do
+              curl -sf "$url" > /dev/null && echo "$url is up" && break
+              sleep 2
+            done
+          done
+
+      # ── Benchmarks ─────────────────────────────────────────────────────────
+
+      - name: Create results directory
+        run: mkdir -p bench/results
+
+      - name: k6 HTTP — Phoenix
+        run: k6 run bench/k6_http.js --env TARGET=phoenix
+
+      - name: k6 HTTP — Rails
+        run: k6 run bench/k6_http.js --env TARGET=rails
+
+      - name: k6 WebSocket — Phoenix
+        run: k6 run bench/k6_ws.js --env TARGET=phoenix
+
+      - name: k6 WebSocket — Rails
+        run: k6 run bench/k6_ws.js --env TARGET=rails
+
+      - name: WS flood — Phoenix (500 conns)
+        run: node bench/ws_flood.js --target phoenix --conns 500
+
+      - name: WS flood — Rails (500 conns)
+        run: node bench/ws_flood.js --target rails --conns 500
+
+      # ── Results ────────────────────────────────────────────────────────────
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: bench/results/
+          retention-days: 90

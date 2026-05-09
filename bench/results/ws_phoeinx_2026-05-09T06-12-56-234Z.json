@@ -1,0 +1,179 @@
+{
+  "metrics": {
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 4291.994500000001,
+        "p(95)": 4617.0607584,
+        "avg": 1296.8869807226283,
+        "min": 0.118167,
+        "med": 437.27625,
+        "max": 10344.625375
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 57,
+        "min": 5,
+        "max": 499
+      }
+    },
+    "ws_first_msg_ms": {
+      "thresholds": {
+        "p(95)<1000": {
+          "ok": true
+        }
+      },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0,
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "max": 500,
+        "value": 500,
+        "min": 500
+      }
+    },
+    "ws_connect_ms": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0,
+        "min": 0
+      },
+      "thresholds": {
+        "p(95)<2000": {
+          "ok": true
+        }
+      }
+    },
+    "ws_errors": {
+      "thresholds": {
+        "rate<0.05": {
+          "ok": false
+        }
+      },
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 11133,
+        "fails": 0
+      }
+    },
+    "ws_sessions": {
+      "contains": "default",
+      "values": {
+        "count": 11133,
+        "rate": 154.77390109139998
+      },
+      "type": "counter"
+    },
+    "ws_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 437.2535,
+        "max": 10344.570625,
+        "p(90)": 4291.9639832,
+        "p(95)": 4617.030975000001,
+        "avg": 1296.8488716763693,
+        "min": 0.102791
+      }
+    },
+    "ws_session_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1296.8576442540193,
+        "min": 0.106041,
+        "med": 437.258583,
+        "max": 10344.581167,
+        "p(90)": 4291.9748332,
+        "p(95)": 4617.0377088000005
+      }
+    },
+    "iterations": {
+      "contains": "default",
+      "values": {
+        "rate": 154.77390109139998,
+        "count": 11133
+      },
+      "type": "counter"
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 11133
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 2080220,
+        "rate": 28919.76686682404
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 4053245,
+        "rate": 56349.28058288076
+      }
+    }
+  },
+  "root_group": {
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": [
+        {
+          "path": "::ws status 101",
+          "id": "9aa7d17552df26c9c2b85f5a8c0838ff",
+          "passes": 0,
+          "fails": 11133,
+          "name": "ws status 101"
+        }
+      ],
+    "name": ""
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": true,
+    "isStdErrTTY": true,
+    "testRunDurationMs": 71930.732
+  }
+}

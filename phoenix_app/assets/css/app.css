@@ -1,0 +1,28 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/*
+ * Shared custom styles — identical content in:
+ *   phoenix_app/assets/css/app.css   (this file)
+ *   rails_app/app/assets/tailwind/application.css
+ *
+ * Both apps import the same Tailwind utility classes in HTML templates.
+ * Only classes that Tailwind utilities don't cover appear here.
+ */
+
+/* Typing indicator pulse */
+@keyframes typing-pulse {
+  0%, 60%, 100% { opacity: 1; }
+  30% { opacity: 0.3; }
+}
+
+#typing-indicator:not(:empty) {
+  animation: typing-pulse 1.4s ease-in-out infinite;
+}
+
+/* Smooth avatar entrance */
+#presence-list > div {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+

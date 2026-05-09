@@ -1,0 +1,65 @@
+<div class="min-h-screen bg-gray-50"
+     data-controller="stress"
+     data-stress-ws-url-value="<%= ActionCable.server.config.url || 'ws://localhost:3000/cable' %>">
+
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
+      <%= link_to "← back", room_path("lobby"), class: "text-gray-400 hover:text-gray-600 transition-colors text-sm" %>
+      <h1 class="text-sm font-semibold text-gray-900">
+        Stress Test
+        <span class="ml-2 text-orange-500 font-normal">Rails Hotwire</span>
+      </h1>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 mb-4">Action Cable round-trip latency</h2>
+      <p class="text-xs text-gray-500 mb-4">
+        Opens N Action Cable connections and measures the time from subscription
+        to first message. For full HTTP + WebSocket benchmarks run the k6 scripts.
+      </p>
+
+      <div class="flex items-end gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Connections (N)</label>
+          <input
+            type="number"
+            value="50"
+            min="1"
+            max="500"
+            data-stress-target="connCount"
+            class="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <button
+          type="button"
+          data-action="click->stress#run"
+          data-stress-target="runBtn"
+          class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2
+                 rounded-lg text-sm font-medium transition-colors">
+          Run flood
+        </button>
+      </div>
+      <p class="mt-3 text-xs text-gray-500" data-stress-target="status"></p>
+    </div>
+
+    <div class="bg-gray-900 rounded-lg p-4 font-mono text-xs text-green-400 max-h-80 overflow-y-auto hidden"
+         data-stress-target="log" id="stress-log">
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">k6 scripts (run from /bench)</h2>
+      <div class="space-y-2 font-mono text-xs text-gray-600 bg-gray-50 rounded p-3">
+        <div># HTTP throughput</div>
+        <div class="text-orange-500">k6 run bench/k6_http.js --env TARGET=rails</div>
+        <div class="mt-2"># WebSocket connection flood</div>
+        <div class="text-orange-500">k6 run bench/k6_ws.js --env TARGET=rails</div>
+        <div class="mt-2"># Node.js raw WebSocket flood</div>
+        <div class="text-orange-500">node bench/ws_flood.js --target rails --conns 500</div>
+      </div>
+    </div>
+
+  </main>
+</div>
