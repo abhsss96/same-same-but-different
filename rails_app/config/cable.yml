@@ -1,7 +1,8 @@
 # PostgreSQL adapter uses LISTEN/NOTIFY so broadcasts work across multiple
-# Puma workers. Requires the same credentials as the app DB.
+# Puma workers. Explicit URL so it uses the same credentials as the app DB.
 development:
   adapter: postgresql
+  url: <%= "postgres://#{ENV.fetch("DATABASE_USERNAME") { `whoami`.strip }}:#{ENV.fetch("DATABASE_PASSWORD", "")}@#{ENV.fetch("DATABASE_HOST", "localhost")}/rails_app_development" %>
 
 test:
   adapter: test
